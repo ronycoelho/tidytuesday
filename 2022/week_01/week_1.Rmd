@@ -1,0 +1,26 @@
+---
+title: "week_1"
+output: html_output
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(janitor)
+library(tidytuesdayR)
+```
+
+```{r}
+week <- paste0("week_", 2)
+
+paste0("2022/", week)
+dir.create(paste0("2022/", week))
+setwd(paste0("2022/", week))
+save()
+```
+
+```{r}
+
+```
+

@@ -1,0 +1,129 @@
+---
+title: "week_2"
+output: html_output
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(janitor)
+library(tidytuesdayR)
+library(ggtext)
+```
+
+```{r}
+week <- paste0("week_", 2)
+
+#paste0("2022/", week)
+#dir.create(paste0("2022/", week))
+setwd(paste0("2022/", week))
+#save()
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2022-01-11')
+```
+
+```{r}
+colony <- tuesdata$colony
+stressor <- tuesdata$stressor
+```
+
+```{r}
+colony %>% glimpse()
+
+colony %>% distinct(year, months)
+
+stressor %>% glimpse()
+```
+
+```{r}
+colony <- colony %>% 
+  mutate(id = paste0(year, months, state), .before = year)
+
+stressor <- stressor %>% 
+  mutate(id = paste0(year, months, state), .before = year) %>% 
+  select(id, stressor, stress_pct)
+```
+ 
+
+```{r}
+bees <- colony %>% 
+  left_join(stressor)
+
+bees <- bees %>%
+  count(stressor, state, months, year, wt = stress_pct, sort = T) %>% 
+  filter(n !=0) 
+
+bees <- bees %>% 
+  mutate(quarters = 
+           case_when(months == "January-March" ~ "T1",
+                      months == "April-June" ~ "T2",
+         months == "July-September" ~ "T3",
+         months == "October-December" ~ "T4")) %>%
+  #mutate(quarters = paste0(year, ".", quarters)) %>% 
+  mutate(x.label = 
+    paste0("<span style = 'color:gray50'>" , year, "</span>", ".", 
+    "<span style = 'color:red'>", quarters, "</span>")) %>% 
+  arrange(quarters)
+
+bees <- bees %>% 
+  add_count(stressor, wt = n, name = "total") %>% 
+  mutate(stressor = fct_reorder(stressor, total, .desc = T))
+
+# bees.l <- bees %>% 
+#   mutate(x.label = 
+#     paste0("<span style = 'color:gray50'>" , year, "</span>", ".", 
+#     "<span style = 'color:red'>", quarters, "</span>"))
+
+```
+
+
+```{r}
+plot <- bees %>%
+  #filter(stressor == "Varroa mites") %>%
+  ggplot(aes(x.label, n)) +
+  geom_hex(color = "gray10",
+           bins = 40,
+           alpha = .6) +
+  scale_fill_gradient( low = "yellow", high = "red") +
+  #paletteer::scale_fill_paletteer_c(palette = "ggthemes::Classic Orange") +
+  coord_cartesian(clip = "off")+
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "gray95", color = NA),
+    panel.grid = element_blank(),
+    axis.text.x = element_markdown(angle = 45, face = "bold"),
+    axis.text.y = element_text(face = "bold", size = 12),
+    axis.title = element_text(size = 20),
+    plot.title = element_markdown(size = 30),
+    plot.caption = element_text(size = 15, face = "italic"),
+    legend.position = c(0.75,1.05),
+    legend.direction = "horizontal",
+    legend.text = element_text(size = 15),
+    strip.text = element_text(size = 15, face = "bold.italic"),
+    strip.background = element_rect(fill = alpha("yellow",.1), color = NA),
+    plot.margin = margin(2,1,1,1, "cm")) +
+  guides(fill = guide_bins(title.theme = element_text(vjust = .8, size = 15), keywidth = unit(1, "cm")))+
+  facet_wrap(vars(stressor), strip.position = "right", scales = "free_x")+
+  labs(y = "% of colonies affected\n", x = "Quarters", 
+       title = "*Stressors that affected bees colonies in the EUA*\n\n",
+       fill = "Count",
+       caption = "Source: USDA")+
+  NULL
+```
+
+
+```{r}
+ggsave("week_2.png",
+  plot = plot,
+  device = ragg::agg_png(width = 16, 
+          height = 9, 
+          units = "in", 
+          res = 300))
+
+xopen::xopen("week_2.png")
+```
+
+ 
