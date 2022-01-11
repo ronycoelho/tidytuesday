@@ -1,5 +1,5 @@
 ---
-title: "week_2"
+title: "week_02"
 output: html_output
 ---
 
@@ -13,7 +13,7 @@ library(ggtext)
 ```
 
 ```{r}
-week <- paste0("week_", 2)
+week <- paste0("week_", 02)
 
 #paste0("2022/", week)
 #dir.create(paste0("2022/", week))
