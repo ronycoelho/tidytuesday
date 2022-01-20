@@ -1,0 +1,143 @@
+---
+title: "week_1"
+output: html_output
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(janitor)
+library(tidytuesdayR)
+library(lubridate)
+library(paletteer)
+library(extrafont)
+```
+
+```{r}
+week <- paste0("week_", "03")
+
+paste0("2022/", week)
+dir.create(paste0("2022/codes/", week))
+setwd(paste0("2022/codes/", week))
+```
+
+```{r}
+tidytuesdayR::last_tuesday()
+tt <- tidytuesdayR::tt_load("2022-01-18")
+
+tt$chocolate
+
+loadfonts()
+
+font.1 <- fonts()[84]
+font.2 <- fonts()[63]
+```
+
+```{r}
+chocolate <- tt$chocolate
+```
+
+```{r}
+chocolate %>% glimpse()
+
+range(chocolate$rating)
+
+caption <- "Source: Flavors of Cacao\nReproducing the plot from Will Canniford, at Kagle, with some customization:\n https://www.kaggle.com/willcanniford/chocolate-bar-ratings-extensive-eda"
+```
+
+```{r}
+chocolate %>% 
+  group_by(country_of_bean_origin, company_location) %>% 
+  summarise(avg = mean(rating), n = n()) %>% 
+  arrange(desc(n))
+  count(company_manufacturer, sort = T)
+
+chocolate %>% 
+  filter(country_of_bean_origin == "Brazil") %>% 
+  select(-company_location, - ingredients, - country_of_bean_origin, -specific_bean_origin_or_bar_name) %>% 
+  count(company_manufacturer)
+  
+  group_by(country_of_bean_origin) %>% 
+  summarise(avg = mean(rating)) %>% 
+  arrange(desc(avg))
+  
+  count(country_of_bean_origin, sort = T)
+
+chocolate %>% 
+  group_by(review_date, company_manufacturer) %>% 
+  summarise(avg = mean(rating)) %>% 
+  ungroup() %>% 
+  count(company_manufacturer)
+
+chocolate %>% 
+  filter(review_date == 2021) %>% 
+  count(company_manufacturer)
+
+chocolate %>% 
+  mutate(review_date = ymd(paste(review_date, 1, 1, sep="-")))
+```
+
+
+```{r}
+brazil <- chocolate %>% 
+  filter(country_of_bean_origin == "Brazil")
+
+brazil %>% glimpse()
+```
+
+
+```{r}
+chocolate %>%  
+  mutate(cocoa_percent = as.numeric(str_remove(cocoa_percent, "%"))) %>% 
+  group_by(country_of_bean_origin) %>% 
+  summarise(avg.rating = mean(rating), avg.perct = mean(cocoa_percent)) %>% 
+  ungroup() %>% 
+  mutate(country_of_bean_origin = fct_reorder(country_of_bean_origin, avg.perct, .desc = T)) %>% 
+  ggplot(aes(avg.perct, country_of_bean_origin))+
+  geom_col()
+  
+  
+  geom_tile(size = 2)
+  
+```
+
+```{r}
+chocolate %>% 
+  rowwise() %>% 
+  group_by(company_manufacturer) %>% 
+  filter(n() > 10) %>% 
+  mutate(avg = mean(rating)) %>% 
+  ungroup() %>% 
+  mutate(company_manufacturer = fct_reorder(company_manufacturer, avg)) %>% 
+  ggplot(aes(rating, company_manufacturer)) + 
+  geom_count(alpha = .1, color = "#DA9556", stroke =1.5)+
+  geom_point(aes(y = as.factor(company_manufacturer), x = avg, colour = avg), size =4) + 
+  labs(y = 'Company', x = '\nRating', title = "Chocolate Companies \nRating", caption = caption) + 
+  paletteer::scale_color_paletteer_c("ggthemes::Brown", name = 'Average rating', breaks = seq(3,4,.25)) + 
+  scale_size_continuous(name = 'Number of ratings', breaks = seq(0,14,2), range = c(5,10))+
+  coord_cartesian(clip = "off")+
+  theme_minimal()+
+  theme(aspect.ratio = 2/1,
+        plot.title = element_text(color = "#9F3632",  vjust = 2, hjust = .5, family = font.1),
+        plot.caption = element_text(color = "#9F3632"),
+        axis.title.y = element_text(angle = 0, vjust = 1.02, 
+                                    color = "#9F3632", face = "bold", family = font.2),
+        axis.text = element_text(color = "#9F3632", family = font.2, size = 12),
+        axis.title.x = element_text(color = "#9F3632", face = "bold", family = font.2),
+        legend.text = element_text(color = "#9F3632", face = "bold", family = font.2),
+        legend.title = element_text(color = "#9F3632", face = "bold", family = font.2),
+        plot.margin = margin(1,0,1,0, "cm"))
+```
+
+```{r}
+ggsave("week_03.png",
+  plot = plot,
+  device = ragg::agg_png(width = 10, 
+          height = 10, 
+          units = "in", 
+          res = 300))
+
+xopen::xopen("week_03.png")
+```
+

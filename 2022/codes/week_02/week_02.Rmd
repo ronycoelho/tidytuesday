@@ -99,7 +99,7 @@ plot <- bees %>%
     axis.title = element_text(size = 20),
     plot.title = element_markdown(size = 30),
     plot.caption = element_text(size = 15, face = "italic"),
-    legend.position = c(0.75,1.05),
+    legend.position = c(0.83,1.05),
     legend.direction = "horizontal",
     legend.text = element_text(size = 15),
     strip.text = element_text(size = 15, face = "bold.italic"),
@@ -116,12 +116,12 @@ plot <- bees %>%
 
 
 ```{r}
-ggsave("week_2.png",
+ggsave("week_02.png",
   plot = plot,
   device = ragg::agg_png(width = 16, 
           height = 9, 
           units = "in", 
-          res = 300))
+          res = 400))
 
 xopen::xopen("week_2.png")
 ```
