@@ -80,6 +80,7 @@ bees <- bees %>%
 ```
 
 
+
 ```{r}
 plot <- bees %>%
   #filter(stressor == "Varroa mites") %>%
@@ -108,7 +109,7 @@ plot <- bees %>%
   guides(fill = guide_bins(title.theme = element_text(vjust = .8, size = 15), keywidth = unit(1, "cm")))+
   facet_wrap(vars(stressor), strip.position = "right", scales = "free_x")+
   labs(y = "% of colonies affected\n", x = "Quarters", 
-       title = "*Stressors that affected bees colonies in the EUA*\n\n",
+       title = "*Stressors that affected bees colonies in the USA*\n\n",
        fill = "Count",
        caption = "Source: USDA")+
   NULL

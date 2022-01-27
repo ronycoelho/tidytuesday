@@ -1,0 +1,120 @@
+---
+title: "week_04"
+output: html_output
+---
+
+#
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(janitor)
+library(tidytuesdayR)
+library(ggrepel)
+```
+
+#
+```{r}
+week <- paste0("week_", "04")
+
+dir.create(paste0("2022/codes/", week))
+
+setwd(paste0("2022/codes/", week))
+```
+
+#
+```{r}
+tt <- tidytuesdayR::tt_load("2022-01-25")
+```
+
+#
+```{r}
+tt
+ratings <- tt$ratings
+details <- tt$details
+```
+
+#
+```{r}
+ratings %>% 
+  glimpse()
+
+details %>% 
+  glimpse()
+```
+
+#
+```{r}
+ratings %>% 
+  #arrange(rank) %>% 
+  #head(100) %>% as.data.frame()
+  filter(year > 1950) %>% 
+  #filter(year == 2017) %>% 
+  arrange(rank)
+  count(rank)
+
+details %>% count(boardgamecategory, sort = T)
+```
+
+#
+```{r}
+
+ratings.b <- ratings %>% 
+  arrange(rank) %>% 
+  mutate(label = ifelse(rank <= 3, 
+                        paste("Rank:", rank, "\nAverage rating:", average , "\nName:", name , "\nYear:", year),
+                        NA)) %>%
+  mutate(average.bin = cut(average, breaks= c(1:10))) %>% 
+  filter(year > 1950, year < 2020) 
+```
+
+```{r}
+p1 <- ratings.b %>%
+  ggplot()+
+  geom_jitter(
+    aes(year, average, fill = average.bin, size = users_rated),
+  shape = 21, color = ifelse(ratings.b$rank <= 3, "gray40", "gray50"), stroke = ifelse(ratings.b$rank <= 3, 3, 1))+
+  ggsci::scale_fill_rickandmorty(alpha = .7)+
+  scale_size(range = c(1, 12))+
+  scale_y_continuous(limits = c(0,11))+
+  coord_cartesian(clip = "off")+
+  ggrepel::geom_label_repel(aes(year, average, label = label),
+                            #seed = 123,
+                            size = 4,
+                            fill = alpha("white", .2),
+                            max.time = 2,
+                            #color = "blue",
+                            nudge_y = 9,
+                            force = 5,
+                            show.legend = F,
+                            #nudge_x = .15,
+                            #nudge_y = 1,
+                            # segment.curvature = -0.1,
+                            # segment.ncp = 3,  segment.angle = 20,
+                            )+
+  mdthemes::md_theme_avatar( 
+    title.size = 25,  
+    axis.title.size = 15,
+                             axis.text.size = 12)+
+  theme(
+        legend.key = element_rect(color = NA, fill = NA),
+        legend.position = "right",
+        legend.background = element_rect(color = "#EBEBEB",
+                                         size = 1.25),
+        plot.margin = margin(2,2,1,1, "cm"))+
+  guides(fill = guide_legend(override.aes = list(size=5)),
+         size = guide_legend())+
+  labs(title = "**Board Games Rating Ranked**",
+       subtitle = "*Overtime*",
+       y = "Rating Average",
+       x = "",
+       fill = " Average (bin)",
+       size = "Users Rated",
+       caption = "Source: Kaggle by way of Board Games Geek")
+```
+
+```{r}
+ggsave("week_04.png",
+  plot = p1, width = 16, height = 9)
+```
+

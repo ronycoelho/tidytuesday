@@ -33,8 +33,7 @@ loadfonts()
 font.1 <- fonts()[84]
 font.2 <- fonts()[63]
 
-
-caption <- "Source: Flavors of Cacao\nReproducing the plot from Will Canniford, at Kagle, with some customization:\n https://www.kaggle.com/willcanniford/chocolate-bar-ratings-extensive-eda"
+caption <- "Source: Flavors of Cacao\nReproducing the plot from Will Canniford, on Kagle, with some customization:\n https://www.kaggle.com/willcanniford/chocolate-bar-ratings-extensive-eda"
 ```
 
 ```{r}
@@ -85,4 +84,3 @@ plot
 # xopen::xopen("week_03.png")
 # dev.off()
 ```
-
