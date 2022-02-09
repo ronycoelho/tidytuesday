@@ -1,0 +1,119 @@
+---
+title: "week_06"
+output: html_output
+---
+
+#
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(janitor)
+library(tidytuesdayR)
+library(ggrepel)
+```
+
+#
+```{r}
+week <- paste0("week_", "06")
+
+dir.create(paste0("2022/codes/", week))
+
+setwd(paste0("2022/codes/", week))
+```
+
+#
+```{r}
+tt <- tidytuesdayR::tt_load("2022-02-08")
+
+airmen <- tt$airmen
+```
+
+
+
+```{r}
+caption.text <- "Source: CAF (Commemorative Air Force)"
+```
+
+
+```{r}
+airmen %>% 
+  inspectdf::inspect_na()
+
+airmen %>% 
+  inspectdf::inspect_cat()
+```
+
+
+```{r}
+text <- "The Tuskegee Airmen were a group of primarily African American military pilots (fighter and bomber) and airmen who fought in World War II. They formed the 332d Expeditionary Operations Group and the 477th Bombardment Group of the United States Army Air Forces."
+
+str_wrap(text,80)
+```
+
+```{r}
+p1 <- ggplot() +
+    theme_void() +
+    geom_text(aes(0,0,label= str_wrap(text,70)), size = 3)+
+    geom_text(aes(0,0, label = "Tuskegee Airmen"), vjust = -5, size = 5)+
+    geom_text(aes(0,0, label = caption.text), vjust = 8, size = 3)+
+    coord_cartesian(clip = "off")+
+    theme(plot.margin = margin(1,-1,1,2, "cm"))
+```
+
+
+
+```{r}
+p2 <- airmen %>% 
+  drop_na(state) %>%
+  mutate(pilot_type = recode(pilot_type, "Liason pilot" = "Liaison pilot")) %>% 
+  count(state, pilot_type) %>%
+  group_by(state) %>% 
+  mutate(
+            total = sum(n)) %>% 
+  ungroup() %>%
+  group_by(pilot_type) %>% 
+  mutate(n.pilot = n()) %>% 
+  ungroup() %>% 
+  mutate(pilot_type = fct_reorder(pilot_type, n.pilot, .desc = T)) %>% 
+  mutate(rank = dense_rank(total)) %>%
+  arrange(desc(total)) %>% 
+  mutate(rank = ifelse(rank > 3, rank/3, rank)) %>% 
+  mutate(rank = ifelse(rank <= 3, 3, rank)) %>% 
+  mutate(state = fct_reorder(state, total )) %>% 
+  ggplot(aes(y = n, x = state, fill = pilot_type))+
+  scale_y_continuous(limits = c(-1,92))+
+  viridis::scale_fill_viridis(option = "B", discrete = T)+
+#  scale_x_discrete(guide = guide_axis(n.dodge = 2))+
+  geom_col(color = "white")+
+  geom_text(aes(label = state, y = 0, size = rank), color = "black",
+             nudge_y = -.5, hjust = 1, vjust =.5, show.legend = F, check_overlap = T)+
+  coord_polar(clip = "off", theta = "y")+
+  #annotate(geom = "text", y= 75, x = 25, label = "Tuskegee Airmen")+
+  theme_minimal()+
+  theme(
+    plot.title.position = "plot",
+    plot.title = element_text(hjust = .5, vjust = .5),
+    legend.position = c(0.35,0.4),
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.x = element_text(size = 20, face = "bold"),
+    plot.margin = margin(-1,-1,-1,-1, "cm"))+
+  labs(fill = "Pilot Type", y = "Pilot type by State")
+
+```
+
+```{r}
+plot <- p1+p2+plot_layout(widths = c(1,2))
+```
+
+
+```{r}
+ggsave(plot = plot, filename = paste0(week, ".png"), 
+       height = 6.5, 
+       width = 10, 
+       units = "in")
+
+xopen::xopen(paste0(week, ".png"))
+```
+

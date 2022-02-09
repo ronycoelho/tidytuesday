@@ -1,3 +1,7 @@
+# Week 06
+[codes](https://github.com/ronycoelho/tidytuesday/blob/main/2022/codes/week_06/week_06.Rmd)
+![](https://github.com/ronycoelho/tidytuesday/blob/main/2022/codes/week_06/week_06.png?raw=true)
+
 # Week 05
 [codes](https://github.com/ronycoelho/tidytuesday/blob/main/2022/codes/week_05/week_05.Rmd)
 ![](https://github.com/ronycoelho/tidytuesday/blob/main/2022/codes/week_05/week_05.png?raw=true)
