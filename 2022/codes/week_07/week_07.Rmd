@@ -1,0 +1,110 @@
+---
+title: "week_07"
+output: html_output
+---
+
+#
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(janitor)
+library(tidytuesdayR)
+library(ggrepel)
+library(ggtext)
+library(ggrough)
+library(extrafont)
+library(ggpatter)
+```
+
+#
+```{r}
+week <- paste0("week_", "07")
+
+dir.create(paste0("2022/codes/", week))
+
+setwd(paste0("2022/codes/", week))
+```
+
+#
+```{r}
+#DuBoisChallenge2022
+https://github.com/rfordatascience/tidytuesday/blob/master/data/2022/2022-02-15/readme.md
+https://github.com/ajstarks/dubois-data-portraits/blob/master/dubois-style.pdf
+```
+
+```{r}
+loadfonts()
+
+font <- fonts()[1]
+```
+
+
+```{r}
+v.1 <- c(37.59, 100-37.59)  
+v.2 <- c(56.66, 100-56.66) 
+v.3 <- c(57.29, 100-57.29)
+
+df <- tibble(year = rep(c(1876, 1886, 1896), each = 2), 
+             children = rep(c("enroled", "not enroled"), 3),
+             qt = c(100, 100, 120, 120, 165, 165),
+             perc = c(v.1, v.2, v.3))
+
+
+df <- df %>% 
+  mutate(qt.1 = perc*qt/100) 
+```
+
+
+```{r}
+title <- c("Proportion of Total Negro Children of School Age Who are Enrolled in the Public Schools.", "proportion des enfantes nègres en âge d'école enregistrés dans les écoles publiques.")
+
+paste0(str_to_upper(title),collapse = "\n")
+
+legend.text <- str_to_upper(c("of Children Enrolled", "d'enfantes enregistrés"))
+legend.text.2 <- str_to_upper(c("of Children not Enrolled", "d'enfantes not enregistrés"))
+```
+
+
+```{r}
+p <- df %>% 
+  ggplot(aes(x = year, y = qt.1, fill = rev(children))) + 
+  geom_col(width = 5)+
+  scale_x_continuous()+
+  scale_y_reverse()+
+  scale_fill_manual(values = c("#000000", "#D20335"),
+                               labels = c(paste0(legend.text.2, collapse = "\n"), paste0(legend.text, collapse = "\n")))+
+  geom_text(aes(label = year, y = -4), size = 9, family = font, fontface = "bold")+
+  geom_text(aes(label = paste0(" ", perc, "%  ")), size = 10, 
+              position = position_stack(vjust = .5), family = font, fontface = "bold")+
+  theme_minimal(base_family = font)+
+  theme(
+    #text = element_markdown()),
+    plot.title = element_markdown(hjust = .5, size = 20),
+    plot.subtitle = element_markdown(hjust = .5, size = 15),
+    panel.grid = element_blank(),
+    plot.background = element_rect(color = "#ECECE6", fill="#DDD1C5", size = 12),
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    plot.margin = margin(2,3.5,2.5,3, "cm"),
+    legend.position = c(.28, .25),
+    legend.spacing.y = unit(1.0, 'cm')
+    
+  )+
+    labs(title = paste0(str_to_upper(title),collapse = "<br><br><br>"),
+       subtitle = "<br><br>DONE BY ATLANTA UNIVERSITY  .<br><br>",
+        fill = "")+
+  guides(fill = guide_legend(keywidth = 2.5, keyheight = 2.5, byrow = TRUE, 
+                             reverse = T, 
+                             label.theme = element_text(vjust = .6, size = 10, color = alpha("black", .5)))
+         
+         )
+
+ggsave(plot = p, filename = paste0(week, ".png"), 
+       height = 338, 
+       width = 270, 
+       units = "mm")
+
+xopen::xopen(paste0(week, ".png"))
+```
+
