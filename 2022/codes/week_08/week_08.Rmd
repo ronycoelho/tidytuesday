@@ -1,0 +1,192 @@
+---
+title: "week_08"
+output: html_output
+---
+
+https://riffomonas.org/code_club/2021-05-05-strip-roc-animation
+
+#
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require("pacman")) install.packages("pacman")
+
+pacman::p_load(tidytuesdayR, tidyverse, janitor, here, patchwork, ggtext, maptools, spDataLarge, sf)
+```
+
+
+```{r}
+week <- paste0("week_", "08")
+
+dir.create(paste0(here::here(), "/2022/codes/", week))
+
+setwd(paste0(here::here(), "/2022/codes/", week))
+```
+
+#
+```{r}
+tt <- tidytuesdayR::tt_load("2022-02-22")
+```
+
+
+```{r}
+freedom <- tt$freedom
+data("wrld_simpl")
+
+#https://bookdown.org/robinlovelace/geocompr/reproj-geo-data.html
+
+wrld_simpl <- wrld_simpl %>%
+  st_as_sf() %>%
+  st_transform(crs =  "+proj=robin") %>% 
+  #st_transform(crs = "+proj=laea") %>% 
+  mutate(code = as.character(ISO3)) %>% 
+  filter(NAME != "Antarctica") %>% 
+  janitor::clean_names() %>% 
+  as_tibble()
+
+#plot(map)
+```
+
+
+```{r}
+vector <- freedom %>% 
+  anti_join(wrld_simpl, by = c( "country" = "name")) %>%
+  select(country) %>% 
+  distinct(country) %>% 
+  arrange() %>% 
+  pull()
+
+wrld_simpl %>% 
+  anti_join(freedom, by = c("name" = "country")) %>%
+  select(name) %>% 
+  distinct(name) %>% 
+  arrange() %>% 
+  as.data.frame()
+
+wrld_simpl %>% 
+  filter(str_detect(name, "Su")) %>% 
+  as.data.frame()
+```
+
+
+```{r}
+freedom <- freedom %>% 
+  mutate(country=case_when(country==vector[1]~"Bolivia",
+                           country==vector[2]~"Cape Verde",
+                           country==vector[3]~"Ivory Coast",
+                           country==vector[4]~"Czech Republic",
+                           country==vector[5]~country,
+                           country==vector[6]~"Libyan Arab Jamahiriya",
+                           country==vector[7]~" Micronesia, Federated States of",
+                           country==vector[8]~"Burma",
+                           country==vector[9]~"North Korea",
+                           country==vector[10]~"Macedonia",
+                           country==vector[11]~"Russia",
+                           country==vector[12]~"South Korea",
+                           country==vector[13]~"Sudan",
+                           country==vector[14]~"United Kingdom",
+                           country==vector[15]~"United States",
+                           country==vector[16]~"Venezuela",
+                           TRUE ~ country))
+```
+
+```{r}
+df <- freedom %>% 
+  left_join(wrld_simpl, by = c("country" = "name")) %>% 
+  drop_na() %>% 
+  janitor::clean_names()
+```
+
+```{r}
+df %>% 
+  distinct(geometry)
+
+df %>% glimpse()
+```
+
+```{r}
+extrafont::loadfonts(device="win")
+font <- extrafont::fonts()[13]
+
+theme_set(ggthemes::theme_map(base_family = font))
+```
+
+
+```{r}
+p1 <- df %>% 
+  filter(year == 2020) %>% 
+  ggplot(aes(fill =  status, geometry = geometry))+
+  geom_sf(lwd = .5, color = "white")+
+  coord_sf()+
+  scale_fill_manual(values = c("blue", "red", "yellow"), 
+                    labels = c("Free", "Not Free", "Partially Free"))+
+  annotate(geom = "text", label = "2020", y = -4500000, x = -10000000, size = 15, family = font) + 
+  #scale_fill_gradient(low ="#8D6E63" , high = "#3E2723", na.value = "gray90")+
+#  ggthemes::theme_map()+
+  theme(
+    plot.title = element_text(hjust = .5, vjust = -2, size = 28, face = "bold", family = font),
+    plot.margin = margin(0,0,0,0, "cm"),
+    legend.position = c(.15,.2)
+  )+
+  labs(title = "Freedom in the World", fill = "Status")
+```
+
+
+```{r}
+p2 <- df %>% 
+  filter(year == 2020) %>%
+  arrange(desc(cl)) %>% 
+  ggplot(aes(fill =  cl, geometry = geometry))+
+  geom_sf(lwd = .2, color = "white")+
+  coord_sf(clip = "off")+
+  scale_fill_gradient2(low = "blue", mid = "yellow", high = "red", 
+                       guide = guide_legend(reverse = F))+
+  #annotate(geom = "text", label = "2000", y = -4500000, x = -11000000, size = 10) + 
+#  ggthemes::theme_map()+
+  theme(
+    legend.position ="none",
+    plot.title = element_text(hjust = .5, size = 15, face = "bold", family = font),
+    plot.margin = margin(0,0,0,0, "cm"),
+    )+
+  labs(title = "Civil Liberties", fill = "Scale")+
+  NULL
+```
+
+
+```{r}
+p3 <- df %>% 
+  filter(year == 2020) %>% 
+  ggplot(aes(fill =  pr, geometry = geometry))+
+  geom_sf(lwd = .2, color = "white")+
+  coord_sf(clip = "off")+
+  scale_fill_gradient2(low = "blue", mid = "yellow", high = "red", 
+                       guide = guide_legend(reverse = F ))+
+  #annotate(geom = "text", label = "2000", y = -4500000, x = -11000000, size = 10) + 
+#  ggthemes::theme_map()+
+  theme(
+    plot.title = element_text(hjust = .5, size = 15, face = "bold", family = font),
+    plot.margin = margin(0,0,0,0, "cm"),
+    legend.position = c(0, .1),
+  )+
+  labs(title = "Political rights", fill = "")
+```
+
+
+```{r}
+plot <- p1/(p2+p3)+
+  plot_layout(heights = c(2,1))+
+  plot_annotation(
+    caption = "Source: Freedom House and the United Nations by way of Arthur Cheib | #TidyTuesday",
+    theme = 
+                    theme(
+    plot.margin = margin(0,0,.5,0, "cm"),
+    plot.caption = element_text(hjust = .7, family = font)
+  ))
+
+ggsave(plot  = plot, filename = paste0(week, ".png"), 
+       height = 6.6, 
+       width = 9, 
+       units = "in", bg = "white"
+        )
+
+xopen::xopen(paste0(week, ".png"))
+```
