@@ -190,3 +190,34 @@ ggsave(plot  = plot, filename = paste0(week, ".png"),
 
 xopen::xopen(paste0(week, ".png"))
 ```
+
+Extra from David Robinson Screen Cast 
+https://www.youtube.com/watch?v=VOzUHk3aaBw&ab_channel=DavidRobinson
+Use country.code to join data
+```{r}
+
+library(countrycode)
+data("wrld_simpl")
+
+
+wrld_simpl <- wrld_simpl %>%
+  st_as_sf() %>%
+  st_transform(crs =  "+proj=robin") %>% 
+  #st_transform(crs = "+proj=laea") %>% 
+  mutate(code = as.character(ISO3)) %>% 
+  filter(NAME != "Antarctica") %>% 
+  janitor::clean_names() %>% 
+  as_tibble()
+
+
+freedom <- freedom %>% 
+  mutate(iso2 = countrycode(country, "country.name", "iso2c"))
+
+freedom %>% 
+  left_join(wrld_simpl)
+```
+
+
+
+```
+
