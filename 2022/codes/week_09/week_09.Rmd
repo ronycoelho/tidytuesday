@@ -1,0 +1,246 @@
+---
+title: "week_09"
+output: html_output
+---
+
+#
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require("pacman")) install.packages("pacman")
+#library(paletteer)
+pacman::p_load(tidytuesdayR, tidyverse, janitor, here, patchwork, ggtext, paletteer)
+```
+
+
+```{r}
+here::here()
+
+week <- paste0("week_", "09")
+
+dir.create(paste0(here::here(), "2022/codes/", week))
+
+setwd(paste0(here::here(), "/2022/codes/", week))
+```
+
+#
+```{r}
+stations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv')
+
+```
+
+
+```{r}
+stations <- stations %>% clean_names()
+```
+
+
+```{r}
+stations.2 <- stations %>%
+  select(open_date, fuel_type_code, status_code) %>% 
+  mutate(year = lubridate::year(as.Date(open_date))) %>% 
+  filter(status_code =="E") %>% 
+  count(year, fuel_type_code) 
+
+
+# stations.2 %>% 
+#   ggplot(aes(year, y = 1, size = n, fill = fuel_type_code))+
+#   geom_point()
+
+stations.2 %>% arrange(desc(n))
+
+stations.2 %>% 
+  count(year, sort = T)
+
+
+stations.2 <- stations.2 %>% 
+  mutate(dec = (year%/%10)*10)
+
+stations.2 <- stations.2 %>% 
+  mutate(
+    label = ifelse(n > 1000, 
+                   paste0(fuel_type_code, "- ", year, ": ", n), 
+                   NA
+    
+  ))
+```
+
+```{r}
+text <- c("BD: Biodiesel (B20 and above)",
+"CNG: Compressed Natural Gas",
+"ELEC: Electric",
+"E85: Ethanol",
+"HY: Hydrogen",
+"LNG: Liquefied Natural Gas",
+"LPG: Propane")
+
+text <- paste0(text, collapse = "\n")
+```
+
+
+```{r}
+bckg <- paletteer_d("ggsci::light_uchicago")[8]
+paletteer_d("ggsci::default_locuszoom")
+
+extrafont::loadfonts(device = "win")
+font <- extrafont::fonts()[97]
+
+theme_set(theme_minimal(base_family = font)+
+         theme(
+           text = element_text(color = "white"),
+           title  = element_text(color = "white"),
+           plot.background = element_rect(color = alpha(bckg, .5), fill = alpha(bckg, .5)),
+           plot.title = element_text(hjust = .8, color = "white", vjust = -2, size = 25),
+           plot.subtitle = element_text(hjust = .8, color = "white", vjust = -4, size =20),
+           plot.caption = element_text(hjust = .85, color = "white"),
+           axis.title.y = element_blank(),
+           axis.text = element_text(color = "white"),
+           axis.text.y = element_blank(), 
+           axis.text.x = element_blank(),
+           panel.grid = element_blank(),
+           legend.position = c(.2,.5),
+           legend.title = element_text(color = "white", family = font),
+           legend.spacing = unit(6, "cm"),
+           legend.background = element_blank(),
+           legend.box.background = element_blank(),
+           plot.margin = margin(t = 1, r = .5, l = 1.5, b = 1, "cm")
+         ))
+```
+
+
+# Number of Alternative fuel stations open over time
+```{r}
+set.seed(1234)
+plot <- ggplot() +
+  geom_hline(data = stations.2,
+             aes(yintercept = 1),
+             color = "white") +
+  geom_jitter(
+    data = filter(stations.2, year <= 1990),
+    aes(
+      year,
+      y = 1,
+      size = n,
+      fill = fuel_type_code
+    ),
+    height = 0,
+    width = 0,
+    shape = 21,
+    color = "white",
+    alpha = .7
+  ) +
+  geom_jitter(
+    data = filter(stations.2, year > 1990, year <= 2000),
+    aes(
+      year,
+      y = 1,
+      size = n,
+      fill = fuel_type_code
+    ),
+    height = .1,
+    width = 0,
+    shape = 21,
+    color = "white",
+    alpha = .7
+  ) +
+  geom_jitter(
+    data = filter(stations.2, year > 2000, year <= 2010),
+    aes(
+      year,
+      y = 1,
+      size = n,
+      fill = fuel_type_code
+    ),
+    height = .15,
+    width = 0,
+    shape = 21,
+    color = "white",
+    alpha = .7
+  ) +
+  geom_jitter(
+    data = filter(stations.2, year > 2010, year <= 2019),
+    aes(
+      year,
+      y = 1,
+      size = n,
+      fill = fuel_type_code
+    ),
+    height = .3,
+    width = 0,
+    shape = 21,
+    color = "white",
+    alpha = .7
+  ) +
+  geom_jitter(
+    data = filter(stations.2, year > 2019),
+    aes(
+      year,
+      y = 1,
+      size = n,
+      fill = fuel_type_code
+    ),
+    height = 0.01,
+    width = 1,
+    shape = 21,
+    color = "white",
+    alpha = .7
+  ) +
+  scale_y_continuous(limits = c(0.5, 1.5)) +
+  scale_x_continuous(limits = c(1970, 2022)) +
+  scale_size(
+    range = c(2, 40),
+    breaks = c(1, 1000, 5000, 10000, 15000, 20000),
+    guide = guide_legend(
+      direction = "horizontal",
+      nrow = 1,
+      title.position = "top",
+      title.theme = element_text(hjust = .5, color = "white"),
+      label.position = "bottom",
+      order = 1
+    )
+  ) +
+  
+  scale_fill_paletteer_d(
+    "ggsci::default_locuszoom",
+    guide = guide_legend(
+      direction = "horizontal",
+      nrow = 1,
+      title.position = "top",
+      keywidth = unit(2, "cm"),
+      keyheight = unit(2, "cm"),
+      override.aes = list(size = 8),
+      title.theme = element_text(hjust = .5, color = "white"),
+      label.position = "bottom"
+    )
+  ) +
+  annotate(
+    geom = "text",
+    x = 2000,
+    y = .50,
+    label = text,
+    family = font, 
+    color = "white"
+  ) +
+  geom_text(
+    data = stations.2,
+    aes(x = dec, label = dec), y = .75,
+    color = "white", family = font, size = 7)+
+  coord_cartesian(clip = "off")+
+  labs(
+    title = "Number of Alternative Fuel Stations",
+    subtitle = "Opened per year",
+    x = "",
+    size = "Quantity",
+    fill = "Fuel type",
+    caption =  "Source: US DOT"
+  )
+
+ggsave(plot = plot, filename = paste0(week, ".png"), 
+       height = 7, 
+       width = 13, 
+       units = "in")
+
+xopen::xopen(paste0(week, ".png"))
+
+#xopen::xopen("https://github.com/ronycoelho/dataviz")
+```
+

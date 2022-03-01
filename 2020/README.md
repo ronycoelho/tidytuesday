@@ -29,7 +29,7 @@
 ![](https://github.com/ronycoelho/tidytuesday2020/blob/master/week_34/week_34.png)
 
 ## Week 33
-
+![](https://github.com/ronycoelho/tidytuesday2020/blob/master/weeK_33/animation_week_33.gif)
 
 ## Week 32
 ![](https://github.com/ronycoelho/tidytuesday2020/blob/master/week_32/week_32.png)
