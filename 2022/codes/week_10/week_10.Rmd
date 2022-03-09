@@ -101,7 +101,7 @@ theme_set(
         axis.text.x = element_text(color = "white", face = "bold", size = 15), 
         legend.background = element_blank(),
         legend.position = c(.4, -.09),
-        legend.direction = "horizontal",
+        legend.direction = "horizontal", plot.caption = element_text(color = "white", hjust = .75, size = 10),
         plot.margin = margin(1, -2, 2, 1, "cm")
       
     
@@ -135,7 +135,8 @@ plot <- df.2 %>%
   coord_cartesian(clip = "off")+
   labs(y = "", x= "", title = "EU Student mobility From 2014 to 2020", 
        subtitle = "Countries with more proportion of women participating",
-       fill = "Gender")+
+       fill = "Gender",
+     caption = "Source: Data.Europa")+
   guides(size = "none")
   
 ggsave(plot = plot, filename = paste0(week, ".png"), 
