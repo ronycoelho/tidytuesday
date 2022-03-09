@@ -1,0 +1,147 @@
+---
+title: "week_10"
+output: html_output
+---
+
+#
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require("pacman")) install.packages("pacman")
+
+pacman::p_load(tidytuesdayR, tidyverse, janitor, here,  ggtext, countrycode)
+
+extrafont::loadfonts(device = "win")
+font <- extrafont::fonts()[97]
+```
+
+
+```{r}
+here::here()
+
+week <- paste0("week_", "10")
+
+dir.create(paste0(here::here(), "/2022/codes/", week))
+
+setwd(paste0(here::here(), "/2022/codes/", week))
+```
+
+#
+```{r}
+tt <- tidytuesdayR::tt_load("2022-03-08")
+```
+
+
+```{r}
+eramus <- tt$erasmus
+```
+
+
+```{r}
+eramus %>% 
+  glimpse
+```
+
+
+```{r}
+country.code <- countrycode::codelist_panel %>% 
+  select(country.name.en, iso2c) %>% 
+  distinct()
+
+df <- eramus %>% 
+#  count(academic_year)
+  #filter(academic_year == "2017-2018") %>% 
+  count(iso2c = sending_country_code, participant_gender) %>%
+  group_by(iso2c) %>% 
+  mutate(total = sum(n),
+         perc = round(n/total*100, 1)) %>% 
+  ungroup() %>% 
+  filter(total > 1000)
+
+summary(df$total)
+
+vector.sel <-  df %>% 
+  mutate(perc.sel = ifelse(participant_gender == "Female", perc, NA)) %>% 
+  filter(perc.sel >= 50) %>% 
+  pull(iso2c)
+  
+df.2 <- df %>% 
+  filter(iso2c %in% vector.sel) %>% 
+  mutate(perc.sel = ifelse(participant_gender == "Female", perc, NA)) %>%
+  left_join(country.code) %>% 
+  filter(total > 1) %>% 
+  mutate(country.name.en = fct_reorder(country.name.en, perc.sel, .fun = sum, na.rm = T)) %>% 
+  mutate(participant_gender = factor(participant_gender, levels = c("Female", "Male", "Undefined"))) %>% 
+  drop_na(country.name.en)
+
+```
+
+
+```{r}
+color <- ggsci::pal_futurama()
+color <- color(3)[c(2,3,1)]
+scales::show_col(color)
+
+color2 <- ggsci::pal_futurama()
+color2 <- color2(5)[5]
+scales::show_col(color2)
+
+theme_set(
+  theme_classic()+
+  theme(#panel.grid.major.y = element_blank(),
+        panel.grid.major.y = element_line(linetype = 2),
+        plot.title = element_text(color = "white", size = 20, face = "bold"),
+        plot.title.position = "panel",
+        #plot.subtitle.position = "panel",
+        plot.subtitle = element_text(color = "white", size = 15, face = "bold", hjust = 0),
+        plot.background = element_rect(fill = "gray90", color = "gray90"),
+        panel.background = element_rect(fill = "gray90", color = "gray90"),
+        axis.line = element_blank(),
+        axis.ticks.y.left = element_blank(),
+        axis.text.y = element_text(face = "bold", vjust = .4, margin = margin(r = -15), size = 15, color = "white"),
+        axis.text.x = element_text(color = "white", face = "bold", size = 15), 
+        legend.background = element_blank(),
+        legend.position = c(.4, -.09),
+        legend.direction = "horizontal",
+        plot.margin = margin(1, -2, 2, 1, "cm")
+      
+    
+  )
+  
+)
+```
+
+```{r}
+plot <- df.2 %>% 
+  ggplot(aes(y = country.name.en,  x = perc, fill = fct_rev(participant_gender)))+
+  geom_col(position = "fill")+
+  expand_limits(x = 1.5)+
+  geom_point(data = df.2, x = 1.1, aes(y = country.name.en,
+                                size = total, color = total, alpha = total), 
+             inherit.aes = F, show.legend = F)+
+  scale_fill_manual(values = color,
+                    guide = guide_legend(reverse = T, 
+                                         title.position = "top",order = 1,
+                                         title.theme = element_text(hjust = .5)))+
+  scale_x_continuous(breaks = c(0, .5, 1))+
+  geom_text(aes(label = format(total, big.mark = ".")), x = 1.2, 
+            color = "white", size = 5, fontface = "bold")+
+  geom_text(x = 1.2, y = 28, label = "Total",
+            color = "white", size = 5, fontface = "bold")+
+  geom_text(aes(label = paste0(perc, "%")), position = position_fill(vjust = .5), 
+            fontface = "bold",
+            color = "white")+
+  scale_size(range = c(8,15))+
+  scale_color_gradient(low = alpha(color2, .5), high = color2)+
+  coord_cartesian(clip = "off")+
+  labs(y = "", x= "", title = "EU Student mobility From 2014 to 2020", 
+       subtitle = "Countries with more proportion of women participating",
+       fill = "Gender")+
+  guides(size = "none")
+  
+ggsave(plot = plot, filename = paste0(week, ".png"), 
+       height = 11, 
+       width = 10, 
+       units = "in")
+
+xopen::xopen(paste0(week, ".png"))
+```

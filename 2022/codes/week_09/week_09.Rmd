@@ -7,7 +7,7 @@ output: html_output
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 if (!require("pacman")) install.packages("pacman")
-#library(paletteer)
+
 pacman::p_load(tidytuesdayR, tidyverse, janitor, here, patchwork, ggtext, paletteer)
 ```
 
@@ -103,7 +103,9 @@ theme_set(theme_minimal(base_family = font)+
            legend.background = element_blank(),
            legend.box.background = element_blank(),
            plot.margin = margin(t = 1, r = .5, l = 1.5, b = 1, "cm")
-         ))
+         )
+
+)
 ```
 
 
