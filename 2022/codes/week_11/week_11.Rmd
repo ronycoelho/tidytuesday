@@ -1,0 +1,110 @@
+---
+title: "week_11"
+output: html_output
+---
+
+#
+```{r setup, include=FALSE}
+#if (!require("pacman")) install.packages("pacman")
+
+pacman::p_load(tidytuesdayR, tidyverse, janitor, here, waterfalls, lubridate)
+
+extrafont::loadfonts(device = "win")
+font <- extrafont::fonts()[43]
+```
+
+
+```{r}
+here::here()
+
+week <- paste0("week_", "11")
+
+dir.create(paste0(here::here(), "/2022/codes/", week))
+
+setwd(paste0(here::here(), "/2022/codes/", week))
+```
+
+#
+```{r}
+tuesdata <- tidytuesdayR::tt_load("2022-03-15")
+bioc <- tuesdata$bioc
+```
+
+
+```{r}
+df <- bioc %>% 
+  mutate(year = year(date)) %>% 
+  group_by(package) %>% 
+  mutate(year.release = min(year)) %>% 
+  filter(row_number() == 1) %>% 
+  ungroup() %>%  
+  count(year.release, sort = T) %>% 
+  filter(year.release > 1970) %>% 
+  arrange(year.release) %>% 
+  mutate(year.release = as.character(year.release))
+
+f.color <- colorRampPalette(colors = c("#57c1f1", "#EEF8FD"))
+f.color <- colorRampPalette(colors = c("red", "blue"))
+scales::show_col(f.color(length(df$n)))
+
+df <- df %>% 
+  arrange(desc(n)) %>% 
+  mutate(fill = f.color(length(df$n))) %>% 
+  arrange(year.release)
+  
+```
+
+```{r}
+color.text <- "white"
+color.back <- "#575757"
+theme_set(
+  theme(
+  text = element_text(color = color.text),
+  title = element_text(color = color.text),
+  axis.text = element_text(color = color.text),
+  plot.background = element_rect(color = color.back, fill = color.back),
+  panel.background = element_rect(color = color.back, fill = color.back),
+  legend.background = element_blank(),
+  legend.key = element_blank()))  
+```
+
+
+
+```{r}
+plot <- waterfalls::waterfall(
+  df,
+  calc_total = T,
+  fill_by_sign = F,
+  fill_colours = df$fill,
+  rect_border = "white",
+  rect_text_size = 2.5,
+  total_rect_color = "#57c1f1",
+  total_rect_text_color =  "yellow"
+) +
+  theme(
+    axis.text  = element_text(size = 15, family = font, angle = 90),
+    plot.title  = element_text(
+      size = 45,
+      family = font,
+      hjust = .2,
+      vjust = -15
+    ),
+    plot.margin = margin(-1, 1,1,1, "cm"),
+      
+    panel.grid = element_line(color = "gray70", linetype = 3)
+  ) +
+  labs(title = "Number of packages \nreleased by year",
+       caption = "Source:  Robert Flight (https://github.com/rmflight/vignette_analysis)")
+  
+```
+
+
+```{r}
+ggsave(plot = plot, filename = paste0(week, ".png"), 
+       height = 9, 
+       width = 15, 
+       units = "in")
+
+xopen::xopen(paste0(week, ".png"))
+```
+
