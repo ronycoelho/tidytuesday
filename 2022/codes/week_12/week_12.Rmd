@@ -1,0 +1,155 @@
+---
+title: "week_12"
+output: html_output
+---
+#
+```{r setup, include=FALSE}
+#if (!require("pacman")) install.packages("pacman")
+
+
+pacman::p_load(tidytuesdayR, tidyverse, janitor, here, patchwork)
+
+extrafont::loadfonts(device = "win")
+font.1 <- extrafont::fonts()[169]
+font.2 <- extrafont::fonts()[43]
+```
+
+```{r}
+here::here()
+
+week <- paste0("week_", "12")
+
+dir.create(paste0(here::here(), "/2022/codes/", week))
+
+setwd(paste0(here::here(), "/2022/codes/", week))
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load("2022-03-22")
+babynames <- tuesdata$babynames
+```
+
+```{r}
+names <- babynames %>%
+  arrange(desc(year), desc(prop)) %>%
+  head(10) %>% pull(name)
+
+df <- babynames %>%
+  filter(year > 1999) %>%
+  filter(name %in% names) %>%
+  group_by(year, name) %>%
+  summarise(prop = sum(prop)) %>%
+  ungroup()
+
+df.2 <- babynames %>%
+  filter(year > 1979) %>%
+  filter(name %in% names) %>%
+  group_by(year, name) %>%
+  summarise(prop = sum(prop)) %>%
+  ungroup()
+```
+
+```{r}
+
+color.text <- "#ffa182"
+color.back <- "#D1D1F980"
+size.text <- 15
+
+theme_set(
+  theme_minimal() +
+    theme(
+      text = element_text(color = color.text, size = size.text, family = font.2),
+      title = element_text(color = color.text, size = size.text + 5,family = font.2),
+      plot.title = element_text(size = 25, hjust = .5, family = font.2),
+      axis.text = element_text(color = color.text, size = size.text + 5),
+      plot.background = element_rect(color = "white", fill = color.back),
+      panel.background = element_rect(color = color.back, fill = color.back),
+      legend.background = element_blank(),
+      plot.margin = margin(1, 1, 1, 1, "cm")
+    )
+  
+)
+```
+
+```{r}
+(
+  p1 <- df %>%
+    mutate(y.label = ifelse(year == max(year), prop, NA)) %>%
+    #filter(name == "Mia")
+    ggplot(aes(
+      x = year,
+      y = prop,
+      color = name,
+      label = name
+    )) +
+    geom_line(size = 2, show.legend = F) +
+    ggsci::scale_color_igv() +
+    scale_y_continuous(labels = scales::percent_format(accuracy = .1)) +
+    ggrepel::geom_text_repel(
+      aes(x = max(year) + 2, y = y.label),
+      direction = "y",
+      seed = 123,
+      min.segment.length = unit(10, "lines"),
+      size = 10,
+      fontface = "bold",
+      hjust = .5,
+      vjust = .5,
+      show.legend = F,
+#      family = font.1
+    ) +
+    geom_text(
+      y = 0,
+      x = 2017,
+      label = 2017,
+      vjust = -1,
+      size = 12,
+      color = "blue",
+      fontface = "bold",
+      family = font.2,
+    ) +
+    geom_vline(xintercept = 2017, linetype = 3) +
+    coord_cartesian(clip = "off") +
+    labs(x = "", title = "From 2000 to 2017", y = "Proportion of total births")
+)
+```
+
+```{r}
+p2 <- df.2 %>% 
+  mutate(y.label = ifelse(year == max(year), prop, NA)) %>% 
+  #filter(name == "Mia")
+  ggplot(aes(x=year, y= prop, color = name, label = name))+
+  geom_line(size = 2, show.legend = F)+
+  ggsci::scale_color_igv()+
+  scale_y_continuous(labels = scales::percent_format(accuracy = .1))+
+  geom_text(y = 0, x = 2017, label = 2017, vjust = 0, size = 10, color ="blue", )+
+  geom_vline(xintercept = 2017, linetype = 3)+
+  coord_cartesian(clip = "off")+
+  labs(x = "", title = "From 1980 to 2017", y = "")
+```
+
+```{r}
+plot <- p1/p2 + plot_layout(heights = c(2,1))+
+  plot_annotation(title = "Baby Names \nShort-term and Long-term trends",
+                  caption = "Source: {babynames} R package",
+                  theme = theme(
+                    
+                    plot.title = element_text(hjust = 0, size = 30, face = "bold", family = font.1)
+                  ))
+```
+
+```{r}
+x11(height = 18, width = 13)
+plot
+```
+
+```{r}
+ggsave(filename = paste0(week, ".png"),
+  plot = plot,
+  device = ragg::agg_png(width = 13, 
+          height = 18, 
+          units = "in", 
+          res = 300))
+
+xopen::xopen(paste0(week, ".png"))
+```
+
