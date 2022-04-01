@@ -1,0 +1,139 @@
+---
+title: "week_13"
+output: html_output
+---
+
+#
+```{r setup, include=FALSE}
+#if (!require("pacman")) install.packages("pacman")
+
+pacman::p_load(tidytuesdayR, tidyverse, janitor, here, ggimage, paletteer, ggtext,colorspace)
+
+options(scipen = 999)
+
+extrafont::loadfonts(device = "win")
+font <- extrafont::fonts()[97]
+```
+
+
+```{r}
+here::here()
+
+week <- paste0("week_", "13")
+
+dir.create(paste0(here::here(), "/2022/codes/", week))
+
+setwd(paste0(here::here(), "/2022/codes/", week))
+```
+
+#
+```{r}
+tuesdata <- tidytuesdayR::tt_load("2022-03-29")
+df <- tuesdata$sports
+```
+
+```{r}
+df %>% inspectdf::inspect_cat()
+df %>% inspectdf::inspect_num()
+```
+
+```{r}
+df.2 <- df %>%
+  select(year, sports, exp_men, exp_women, rev_men, rev_women) %>%
+  pivot_longer(cols = -c(year, sports)) %>% 
+  mutate(gender = name,
+         gender = str_remove(gender, "^(.*)(_)")) %>% 
+  relocate(gender, .after = sports) %>% 
+  mutate(name = str_extract(name, "(.*)(_)"),
+         name = str_remove(name, "(_)")) %>%
+  group_by(year, sports, gender, name) %>% 
+  summarise(value = sum(value, na.rm = T)) %>% 
+  ungroup() %>% 
+  group_by(year, name) %>% 
+  mutate(mean = mean(value)) %>% 
+  ungroup()
+
+df.2 <- df.2 %>% 
+  mutate(name_mean = paste0(name, "_mean")) %>% 
+  mutate(name_value = paste0(name, "_value")) %>% 
+  pivot_wider(id_cols = c(year, sports, gender, name_value, value), 
+              names_from = name_mean, values_from = mean) %>%
+  pivot_wider(id_cols = c(year, sports, gender, exp_mean, rev_mean),
+              names_from = name_value, values_from = value)
+
+df.2 <- df.2 %>% 
+  group_by(year, sports, gender) %>% 
+  summarise(exp_mean = sum(exp_mean, na.rm = T),
+            rev_mean = sum(rev_mean, na.rm = T),
+            exp_value = sum(exp_value, na.rm = T),
+            rev_value = sum(rev_value, na.rm = T)) %>% 
+  ungroup()
+
+# see: https://jtr13.github.io/cc21fall1/icons-and-symbols-in-r.html
+df.2 <- df.2 %>% 
+  mutate(icon = ifelse(gender == "men", "male", "female"))
+```
+
+
+```{r}
+color.text <- "white"
+color.back <- darken("#4B4B6E", .98)
+
+theme_set(
+  theme_light()+
+  theme(
+  text = element_text(color = color.text, family = font),
+  title = element_text(color = color.text, family = font),
+  plot.title = element_text(size = 20, face = "bold", hjust = .5, 
+                            color = color.text, family = font),
+  plot.subtitle = element_markdown(hjust = .5),
+  axis.text = element_markdown(color = color.text),
+  axis.title = element_markdown(vjust = 1),
+  plot.background = element_rect(color = color.back, fill = color.back),
+  panel.background = element_rect(color = color.back, fill = color.back),
+  legend.background = element_blank(),
+  strip.background = element_rect(fill = "#4B4B6E"),
+  strip.text = element_text(face = "bold"),
+  panel.grid = element_blank(),
+  legend.key = element_blank(),
+  plot.margin = margin(.5, 0.5, 0.5, .5, "cm")
+  
+  
+))  
+
+subtext <- 'Revenue and Expenditures for <span style="color:#00A8FF">**men**</span> and <span style="color:#FF8AB7">**woman**</span> in 2019 <br> the traced line --- indicates the average'
+```
+
+
+```{r}
+plot <- df.2 %>% 
+  filter(year == 2019) %>% 
+  filter(sports != "All Track Combined") %>%
+  filter(sports != "Other Sports") %>% 
+  ggplot(aes(x = exp_value, y = rev_value))+
+  geom_icon(aes(image = icon, color = gender), size = .25, alpha = .8)+
+  geom_vline(aes(xintercept = exp_mean), linetype = 2, color = "gray50")+
+  geom_hline(aes(yintercept = rev_mean), linetype = 2, color = "gray50")+
+  geom_hline(aes(yintercept = 0), color = "gray50")+
+  scale_color_manual(values = c("#00A8FF", "#FF8AB7"))+
+  scale_x_log10(labels = scales::label_number_si())+
+  scale_y_log10(labels = scales::label_number_si())+
+  facet_wrap(vars(sports), ncol = 6)+
+  labs(title = "Collegiate sports", 
+       subtitle = subtext, 
+       y = "Log 10 of Revenue in US",
+       x = "Log 10 of Expenditures in USD",
+       caption = "Source:  Equity in Athletics Data Analysis")+
+  guides(color = "none")
+```
+
+
+```{r}
+ggsave(plot = plot, filename = paste0(week, ".png"), 
+       height =8, 
+       width = 14, 
+       units = "in")
+
+xopen::xopen(paste0(week, ".png"))
+```
+

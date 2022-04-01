@@ -1,3 +1,8 @@
+# Week 13
+[codes](https://github.com/ronycoelho/tidytuesday/blob/main/2022/codes/week_13/week_13.Rmd)
+![](https://github.com/ronycoelho/tidytuesday/blob/main/2022/codes/week_13/week_13.png?raw=true)
+
+
 # Week 12
 [codes](https://github.com/ronycoelho/tidytuesday/blob/main/2022/codes/week_12/week_12.Rmd)
 ![](https://github.com/ronycoelho/tidytuesday/blob/main/2022/codes/week_12/week_12.png?raw=true)
