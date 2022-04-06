@@ -38,9 +38,10 @@ plot <- df %>%
   geom_point(aes(year_founded, top),
              shape = 21,
              fill = NA,
-            size = 10)+
+            size = 12)+
   geom_text(aes(year_founded, top, label = top), 
             family = font,
+            size = 5,
             color = "white")+
   annotate(geom = "text",
             x = 1980,
