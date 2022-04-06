@@ -1,0 +1,65 @@
+---
+title: "week_14"
+output: html_output
+---
+
+#
+```{r setup, include=FALSE}
+#if (!require("pacman")) install.packages("pacman")
+
+pacman::p_load(tidytuesdayR, tidyverse, janitor, here, ggimage)
+
+extrafont::loadfonts(device = "win")
+font <- extrafont::fonts()[116]
+```
+
+```{r}
+here::here()
+
+week <- paste0("week_", "14")
+
+dir.create(paste0(here::here(), "/2022/codes/", week))
+
+setwd(paste0(here::here(), "/2022/codes/", week))
+```
+
+#
+```{r}
+tuesdata <- tidytuesdayR::tt_load("2022-04-05")
+df <- tuesdata$news_orgs
+```
+
+```{r}
+plot <- df %>% 
+  count(year_founded, sort = T) %>% 
+  mutate(top = ifelse(n > 50, n, NA)) %>% 
+  ggplot()+
+  geom_area(aes(year_founded, n))+
+  geom_point(aes(year_founded, top),
+             shape = 21,
+             fill = NA,
+            size = 10)+
+  geom_text(aes(year_founded, top, label = top), 
+            family = font,
+            color = "white")+
+  annotate(geom = "text",
+            x = 1980,
+            y = 50,
+            size = 15,
+            family = font,
+            label = "Creation of \nlocal news organizations")+
+  mdthemes::md_theme_ft_rc(font)+
+  labs(y = "#", x = "Founded",
+       caption = "Source: Project Oasis")
+```
+
+
+```{r}
+ggsave(plot = plot, filename = paste0(week, ".png"), 
+       height = 6.5, 
+       width = 14, 
+       units = "in")
+
+xopen::xopen(paste0(week, ".png"))
+```
+
